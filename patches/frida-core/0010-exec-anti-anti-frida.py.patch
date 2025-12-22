@@ -1,7 +1,7 @@
 From ff49a86cf0b28a15cdccbc9da51102d70b14f3d8 Mon Sep 17 00:00:00 2001
 From: Thiasap <you@example.com>
 Date: Mon, 9 Dec 2024 16:28:59 +0800
-Subject: [PATCH 10/11] exec anti-anti-frida.py
+Subject: [PATCH 10/12] exec anti-anti-frida.py
 
 ---
  src/embed-agent.py | 8 ++++++++
