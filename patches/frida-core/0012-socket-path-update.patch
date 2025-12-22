@@ -1,7 +1,7 @@
 From ea46a6d34c31acd16eeb659c1d8a35472e62a424 Mon Sep 17 00:00:00 2001
 From: Xpyy9 <wye_w01n@163.com>
 Date: Mon, 22 Dec 2025 16:56:10 +0800
-Subject: [PATCH 12/12] socket-path update
+Subject: [PATCH 12/13] socket-path update
 
 ---
  src/linux/frida-helper-process.vala | 2 +-

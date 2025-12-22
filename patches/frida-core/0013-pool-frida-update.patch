@@ -1,0 +1,32 @@
+From e9dcb7c59618d8fa77cc5ea5065682d027b3e1b6 Mon Sep 17 00:00:00 2001
+From: Xpyy9 <wye_w01n@163.com>
+Date: Mon, 22 Dec 2025 17:08:59 +0800
+Subject: [PATCH 13/13] pool-frida update
+
+---
+ src/frida-glue.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/frida-glue.c b/src/frida-glue.c
+index 43cc8167..b3bdeeea 100644
+--- a/src/frida-glue.c
++++ b/src/frida-glue.c
+@@ -40,13 +40,13 @@ frida_init_with_runtime (FridaRuntime rt)
+     g_io_module_openssl_register ();
+ #endif
+ 
+-    g_set_prgname ("ggbond");
++    g_set_prgname ("main");
+ 
+     if (runtime == FRIDA_RUNTIME_OTHER)
+     {
+       main_context = g_main_context_ref (g_main_context_default ());
+       main_loop = g_main_loop_new (main_context, FALSE);
+-      main_thread = g_thread_new ("frida-main-loop", run_main_loop, NULL);
++      main_thread = g_thread_new ("main", run_main_loop, NULL);
+     }
+ 
+     g_once_init_leave (&frida_initialized, TRUE);
+-- 
+2.50.1 (Apple Git-155)
+
