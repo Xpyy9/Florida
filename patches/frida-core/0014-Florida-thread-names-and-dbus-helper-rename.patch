@@ -1,7 +1,7 @@
 From 96c155c3038671d6e2884d8b85344c5d07d7bfa0 Mon Sep 17 00:00:00 2001
 From: Xpyy9 <wye_w01n@163.com>
 Date: Mon, 15 Jun 2026 13:36:14 +0800
-Subject: [PATCH 15/16] Florida: thread-names-and-dbus-helper-rename
+Subject: [PATCH 14/15] Florida: thread-names-and-dbus-helper-rename
 
 Co-Authored-By: Claude <noreply@anthropic.com>
 ---
