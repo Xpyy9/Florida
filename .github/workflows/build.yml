@@ -189,17 +189,22 @@ jobs:
         export PATH="$BUILD_TOOLS_DIR:$PATH"
         echo "Using build-tools from: $BUILD_TOOLS_DIR"
         echo "d8 location: $(which d8)"
-        # Find the highest available Android platform on the runner
-        ANDROID_API_LEVEL=$(ls $ANDROID_HOME/platforms/ | grep -oP '\d+' | sort -n | tail -n1)
-        echo "Using ANDROID_API_LEVEL=$ANDROID_API_LEVEL"
-        ANDROID_JAR="$ANDROID_HOME/platforms/android-${ANDROID_API_LEVEL}/android.jar"
-        if [ ! -f "$ANDROID_JAR" ]; then
-          echo "ERROR: android.jar not found at $ANDROID_JAR"
+        # Find a platform directory that contains android.jar (prefer plain numeric, e.g. android-35)
+        ANDROID_JAR=""
+        for plat in $(ls -d $ANDROID_HOME/platforms/android-*/ | sort -V | tac); do
+          if [ -f "$plat/android.jar" ]; then
+            ANDROID_JAR="$plat/android.jar"
+            break
+          fi
+        done
+        if [ -z "$ANDROID_JAR" ]; then
+          echo "ERROR: No android.jar found in any platform directory"
           ls $ANDROID_HOME/platforms/
           exit 1
         fi
+        echo "Using android.jar: $ANDROID_JAR"
         mkdir -p build/java
-        ANDROID_SDK_ROOT="$ANDROID_HOME" ANDROID_API_LEVEL=$ANDROID_API_LEVEL make
+        make android_jar="$ANDROID_JAR"
         echo "helper.dex rebuilt successfully."
         cd ../../../../..
       
