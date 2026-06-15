@@ -180,7 +180,29 @@ jobs:
           echo $i
         done
         cd ..
-        
+    
+        # Rebuild helper.dex after patches renamed Java package (re.frida -> re.fc)
+        echo "Rebuilding helper.dex..."
+        cd frida/subprojects/frida-core/src/android-helper
+        # Add Android SDK build-tools to PATH for d8
+        BUILD_TOOLS_DIR=$(ls -d $ANDROID_HOME/build-tools/*/ | sort -V | tail -n1)
+        export PATH="$BUILD_TOOLS_DIR:$PATH"
+        echo "Using build-tools from: $BUILD_TOOLS_DIR"
+        echo "d8 location: $(which d8)"
+        # Find the highest available Android platform on the runner
+        ANDROID_API_LEVEL=$(ls $ANDROID_HOME/platforms/ | grep -oP '\d+' | sort -n | tail -n1)
+        echo "Using ANDROID_API_LEVEL=$ANDROID_API_LEVEL"
+        ANDROID_JAR="$ANDROID_HOME/platforms/android-${ANDROID_API_LEVEL}/android.jar"
+        if [ ! -f "$ANDROID_JAR" ]; then
+          echo "ERROR: android.jar not found at $ANDROID_JAR"
+          ls $ANDROID_HOME/platforms/
+          exit 1
+        fi
+        mkdir -p build/java
+        ANDROID_SDK_ROOT="$ANDROID_HOME" ANDROID_API_LEVEL=$ANDROID_API_LEVEL make
+        echo "helper.dex rebuilt successfully."
+        cd ../../../../..
+      
         ARCHES="android-arm android-arm64 android-x86 android-x86_64"
         for ARCH in $ARCHES
         do
