@@ -1,0 +1,128 @@
+From 5dd71cbfc2f92b8c619858a80371be0433309498 Mon Sep 17 00:00:00 2001
+From: Xpyy9 <wye_w01n@163.com>
+Date: Mon, 15 Jun 2026 13:31:20 +0800
+Subject: [PATCH 14/16] Florida: dbus-interface-rename
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+---
+ lib/base/session.vala | 26 +++++++++++++-------------
+ 1 file changed, 13 insertions(+), 13 deletions(-)
+
+diff --git a/lib/base/session.vala b/lib/base/session.vala
+index f21d1653..1adda864 100644
+--- a/lib/base/session.vala
++++ b/lib/base/session.vala
+@@ -1,5 +1,5 @@
+ namespace Frida {
+-	[DBus (name = "re.frida.HostSession17")]
++	[DBus (name = "re.fc.HostSession17")]
+ 	public interface HostSession : Object {
+ 		public abstract async void ping (uint interval_seconds, Cancellable? cancellable) throws GLib.Error;
+ 
+@@ -43,7 +43,7 @@ namespace Frida {
+ 		public signal void uninjected (InjectorPayloadId id);
+ 	}
+ 
+-	[DBus (name = "re.frida.AgentSessionProvider17")]
++	[DBus (name = "re.fc.AgentSessionProvider17")]
+ 	public interface AgentSessionProvider : Object {
+ 		public abstract async void open (AgentSessionId id, HashTable<string, Variant> options,
+ 			Cancellable? cancellable) throws GLib.Error;
+@@ -58,7 +58,7 @@ namespace Frida {
+ 		public signal void child_gating_changed (uint subscriber_count);
+ 	}
+ 
+-	[DBus (name = "re.frida.AgentSession17")]
++	[DBus (name = "re.fc.AgentSession17")]
+ 	public interface AgentSession : Object {
+ 		public abstract async void close (Cancellable? cancellable) throws GLib.Error;
+ 
+@@ -100,7 +100,7 @@ namespace Frida {
+ 		public signal void candidate_gathering_done ();
+ 	}
+ 
+-	[DBus (name = "re.frida.AgentController17")]
++	[DBus (name = "re.fc.AgentController17")]
+ 	public interface AgentController : Object {
+ #if !WINDOWS
+ 		public abstract async HostChildId prepare_to_fork (uint parent_pid, Cancellable? cancellable, out uint parent_injectee_id,
+@@ -121,7 +121,7 @@ namespace Frida {
+ 			Cancellable? cancellable) throws GLib.Error;
+ 	}
+ 
+-	[DBus (name = "re.frida.AgentMessageSink17")]
++	[DBus (name = "re.fc.AgentMessageSink17")]
+ 	public interface AgentMessageSink : Object {
+ 		public abstract async void post_messages (AgentMessage[] messages, uint batch_id,
+ 			Cancellable? cancellable) throws GLib.Error;
+@@ -749,7 +749,7 @@ namespace Frida {
+ 		}
+ 	}
+ 
+-	[DBus (name = "re.frida.GadgetSession17")]
++	[DBus (name = "re.fc.GadgetSession17")]
+ 	public interface GadgetSession : Object {
+ 		public abstract async void break_and_resume (Cancellable? cancellable) throws GLib.Error;
+ 		public abstract async void break_and_detach (Cancellable? cancellable) throws GLib.Error;
+@@ -777,14 +777,14 @@ namespace Frida {
+ 		PAGE_PLAN,
+ 	}
+ 
+-	[DBus (name = "re.frida.Channel17")]
++	[DBus (name = "re.fc.Channel17")]
+ 	public interface Channel : Object {
+ 		public abstract async void close (Cancellable? cancellable) throws GLib.Error;
+ 		public abstract async void input (uint8[] data, Cancellable? cancellable) throws GLib.Error;
+ 		public signal void output (uint8[] data);
+ 	}
+ 
+-	[DBus (name = "re.frida.ServiceSession17")]
++	[DBus (name = "re.fc.ServiceSession17")]
+ 	public interface ServiceSession : Object {
+ 		public signal void close ();
+ 		public signal void message (Variant message);
+@@ -794,13 +794,13 @@ namespace Frida {
+ 		public abstract async Variant request (Variant parameters, Cancellable? cancellable) throws GLib.Error;
+ 	}
+ 
+-	[DBus (name = "re.frida.TransportBroker17")]
++	[DBus (name = "re.fc.TransportBroker17")]
+ 	public interface TransportBroker : Object {
+ 		public abstract async void open_tcp_transport (AgentSessionId id, Cancellable? cancellable, out uint16 port,
+ 			out string token) throws GLib.Error;
+ 	}
+ 
+-	[DBus (name = "re.frida.PortalSession17")]
++	[DBus (name = "re.fc.PortalSession17")]
+ 	public interface PortalSession : Object {
+ 		public abstract async void join (HostApplicationInfo app, SpawnStartState current_state,
+ 			AgentSessionId[] interrupted_sessions, HashTable<string, Variant> options, Cancellable? cancellable,
+@@ -809,14 +809,14 @@ namespace Frida {
+ 		public signal void kill ();
+ 	}
+ 
+-	[DBus (name = "re.frida.BusSession17")]
++	[DBus (name = "re.fc.BusSession17")]
+ 	public interface BusSession : Object {
+ 		public abstract async void attach (Cancellable? cancellable) throws GLib.Error;
+ 		public abstract async void post (string json, bool has_data, uint8[] data, Cancellable? cancellable) throws GLib.Error;
+ 		public signal void message (string json, bool has_data, uint8[] data);
+ 	}
+ 
+-	[DBus (name = "re.frida.AuthenticationService17")]
++	[DBus (name = "re.fc.AuthenticationService17")]
+ 	/**
+ 	 * Authenticates clients connecting to a {@link PortalService} or
+ 	 * {@link ControlService}.
+@@ -1136,7 +1136,7 @@ namespace Frida {
+ 		}
+ 	}
+ 
+-	[DBus (name = "re.frida.Error")]
++	[DBus (name = "re.fc.Error")]
+ 	/**
+ 	 * The errors that Frida operations can fail with.
+ 	 */
+-- 
+2.50.1 (Apple Git-155)
+

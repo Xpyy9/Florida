@@ -1,17 +1,17 @@
-From d71916fd1d821c19e882dba42252fc0038c118f3 Mon Sep 17 00:00:00 2001
+From 946418da850a7aba117692e5172d91681c289518 Mon Sep 17 00:00:00 2001
 From: Ylarod <me@ylarod.cn>
 Date: Tue, 18 Jul 2023 15:51:29 +0800
-Subject: [PATCH 01/13] Florida: string_frida_rpc
+Subject: [PATCH 01/16] Florida: string_frida_rpc
 
 ---
  lib/base/rpc.vala | 15 ++++++++++++---
  1 file changed, 12 insertions(+), 3 deletions(-)
 
 diff --git a/lib/base/rpc.vala b/lib/base/rpc.vala
-index c4654527..72efba91 100644
+index 97edecf3..8896f707 100644
 --- a/lib/base/rpc.vala
 +++ b/lib/base/rpc.vala
-@@ -11,13 +11,22 @@ namespace Frida {
+@@ -22,6 +22,15 @@ namespace Frida {
  			Object (peer: peer);
  		}
  
@@ -24,9 +24,10 @@ index c4654527..72efba91 100644
 +			}
 +		}
 +
- 		public async Json.Node call (string method, Json.Node[] args, Bytes? data, Cancellable? cancellable) throws Error, IOError {
- 			string request_id = Uuid.string_random ();
- 
+ 		/**
+ 		 * Calls a remote method and waits for its result.
+ 		 *
+@@ -36,7 +45,7 @@ namespace Frida {
  			var request = new Json.Builder ();
  			request
  				.begin_array ()
@@ -35,16 +36,16 @@ index c4654527..72efba91 100644
  				.add_string_value (request_id)
  				.add_string_value ("call")
  				.add_string_value (method)
-@@ -70,7 +79,7 @@ namespace Frida {
- 		}
- 
+@@ -96,7 +105,7 @@ namespace Frida {
+ 		 * @return true if the message was an RPC message and was handled
+ 		 */
  		public bool try_handle_message (string json) {
 -			if (json.index_of ("\"frida:rpc\"") == -1)
 +			if (json.index_of (getRpcStr(true)) == -1)
  				return false;
  
  			var parser = new Json.Parser ();
-@@ -99,7 +108,7 @@ namespace Frida {
+@@ -125,7 +134,7 @@ namespace Frida {
  				return false;
  
  			string? type = rpc_message.get_element (0).get_string ();

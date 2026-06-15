@@ -1,17 +1,17 @@
-From f49c70e5bab6e254d8a012010e1f2a12154113f3 Mon Sep 17 00:00:00 2001
+From 31edc2cddccb0b42c3d9d6b34accf78117db3b62 Mon Sep 17 00:00:00 2001
 From: Ylarod <me@ylarod.cn>
 Date: Thu, 20 Jul 2023 10:01:20 +0800
-Subject: [PATCH 08/13] Florida: pool-frida
+Subject: [PATCH 08/16] Florida: pool-frida
 
 ---
  src/frida-glue.c | 2 ++
  1 file changed, 2 insertions(+)
 
 diff --git a/src/frida-glue.c b/src/frida-glue.c
-index ee8f0737..43cc8167 100644
+index 6154034e..dcbd4211 100644
 --- a/src/frida-glue.c
 +++ b/src/frida-glue.c
-@@ -40,6 +40,8 @@ frida_init_with_runtime (FridaRuntime rt)
+@@ -56,6 +56,8 @@ frida_init_with_runtime (FridaRuntime rt)
      g_io_module_openssl_register ();
  #endif
  

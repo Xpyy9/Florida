@@ -1,7 +1,7 @@
-From fc4e9cd97c9f97384cc0951f70fa8dae76707645 Mon Sep 17 00:00:00 2001
+From e61c96842ec5f67c53990508ad541e8d8528d542 Mon Sep 17 00:00:00 2001
 From: Xpyy9 <wye_w01n@163.com>
 Date: Mon, 22 Dec 2025 16:09:09 +0800
-Subject: [PATCH 11/13] port update
+Subject: [PATCH 11/16] port update
 
 ---
  lib/base/socket.vala         | 4 ++--
@@ -9,7 +9,7 @@ Subject: [PATCH 11/13] port update
  2 files changed, 4 insertions(+), 4 deletions(-)
 
 diff --git a/lib/base/socket.vala b/lib/base/socket.vala
-index 1ba8d338..faf608e9 100644
+index 8f523b64..a66f7c6f 100644
 --- a/lib/base/socket.vala
 +++ b/lib/base/socket.vala
 @@ -1,6 +1,6 @@
@@ -22,10 +22,10 @@ index 1ba8d338..faf608e9 100644
  	public SocketConnectable parse_control_address (string? address, uint16 port = 0) throws Error {
  		return parse_socket_address (address, port, "127.0.0.1", DEFAULT_CONTROL_PORT);
 diff --git a/tests/test-host-session.vala b/tests/test-host-session.vala
-index e8960281..3dacda3a 100644
+index 533910d4..91b337e2 100644
 --- a/tests/test-host-session.vala
 +++ b/tests/test-host-session.vala
-@@ -1129,7 +1129,7 @@ namespace Frida.HostSessionTest {
+@@ -1145,7 +1145,7 @@ namespace Frida.HostSessionTest {
  				bool waiting = false;
  
  				ControlService control_service;
@@ -34,7 +34,7 @@ index e8960281..3dacda3a 100644
  				while (true) {
  					var ep = new EndpointParameters ("127.0.0.1", control_port);
  					control_service = new ControlService (ep);
-@@ -1427,7 +1427,7 @@ namespace Frida.HostSessionTest {
+@@ -1441,7 +1441,7 @@ namespace Frida.HostSessionTest {
  
  			try {
  				ControlService control_service;

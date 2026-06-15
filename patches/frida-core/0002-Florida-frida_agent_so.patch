@@ -1,17 +1,17 @@
-From 11219833cf3617e857898fe96fc41c0e22f2e90e Mon Sep 17 00:00:00 2001
+From 01db88f22f9a3ff355a5b8cf5dff3fae9baf6146 Mon Sep 17 00:00:00 2001
 From: Ylarod <me@ylarod.cn>
 Date: Tue, 18 Jul 2023 15:57:19 +0800
-Subject: [PATCH 02/13] Florida: frida_agent_so
+Subject: [PATCH 02/16] Florida: frida_agent_so
 
 ---
  src/linux/linux-host-session.vala | 7 ++++---
  1 file changed, 4 insertions(+), 3 deletions(-)
 
 diff --git a/src/linux/linux-host-session.vala b/src/linux/linux-host-session.vala
-index 173e43fa..7ba68726 100644
+index 3f5cba73..e64a0e4a 100644
 --- a/src/linux/linux-host-session.vala
 +++ b/src/linux/linux-host-session.vala
-@@ -62,12 +62,13 @@ namespace Frida {
+@@ -64,12 +64,13 @@ namespace Frida {
  			var blob64 = Frida.Data.Agent.get_frida_agent_64_so_blob ();
  			var emulated_arm = Frida.Data.Agent.get_frida_agent_arm_so_blob ();
  			var emulated_arm64 = Frida.Data.Agent.get_frida_agent_arm64_so_blob ();

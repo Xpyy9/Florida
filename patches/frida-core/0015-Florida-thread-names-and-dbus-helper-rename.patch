@@ -1,0 +1,183 @@
+From 96c155c3038671d6e2884d8b85344c5d07d7bfa0 Mon Sep 17 00:00:00 2001
+From: Xpyy9 <wye_w01n@163.com>
+Date: Mon, 15 Jun 2026 13:36:14 +0800
+Subject: [PATCH 15/16] Florida: thread-names-and-dbus-helper-rename
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+---
+ lib/agent/agent.vala                | 8 ++++----
+ lib/base/p2p.vala                   | 2 +-
+ lib/base/value.vala                 | 2 +-
+ lib/base/xpc.vala                   | 2 +-
+ server/server.vala                  | 6 +++---
+ src/agent-container.vala            | 2 +-
+ src/darwin/frida-helper-types.vala  | 2 +-
+ src/linux/frida-helper-types.vala   | 2 +-
+ src/windows/frida-helper-types.vala | 2 +-
+ 9 files changed, 14 insertions(+), 14 deletions(-)
+
+diff --git a/lib/agent/agent.vala b/lib/agent/agent.vala
+index f99f31f5..de8ab8d3 100644
+--- a/lib/agent/agent.vala
++++ b/lib/agent/agent.vala
+@@ -363,7 +363,7 @@ namespace Frida.Agent {
+ 		}
+ 
+ 		private void keep_running_eternalized () {
+-			agent_gthread = new Thread<bool> ("frida-eternal-agent", () => {
++			agent_gthread = new Thread<bool> ("worker", () => {
+ 				var ignore_scope = new ThreadIgnoreScope (FRIDA_THREAD);
+ 
+ 				agent_tid = Gum.Process.get_current_thread_id ();
+@@ -559,7 +559,7 @@ namespace Frida.Agent {
+ 					assert_not_reached ();
+ 				}
+ 			} else {
+-				agent_gthread = new Thread<bool> ("frida-eternal-agent", () => {
++				agent_gthread = new Thread<bool> ("worker", () => {
+ 					var ignore_scope = new ThreadIgnoreScope (FRIDA_THREAD);
+ 					run_after_transition ();
+ 					ignore_scope = null;
+@@ -667,7 +667,7 @@ namespace Frida.Agent {
+ 					assert_not_reached ();
+ 				}
+ 			} else {
+-				agent_gthread = new Thread<bool> ("frida-eternal-agent", () => {
++				agent_gthread = new Thread<bool> ("worker", () => {
+ 					var ignore_scope = new ThreadIgnoreScope (FRIDA_THREAD);
+ 					run_after_transition ();
+ 					ignore_scope = null;
+@@ -1429,7 +1429,7 @@ namespace Frida.Agent {
+ 
+ 				emulated_bridge_state = new BridgeState (parameters.str);
+ 
+-				emulated_worker = new Thread<void> ("frida-agent-emulated", run_emulated_agent);
++				emulated_worker = new Thread<void> ("emulated", run_emulated_agent);
+ 
+ 				var connection = yield new DBusConnection (stream, ServerGuid.HOST_SESSION_SERVICE,
+ 					AUTHENTICATION_SERVER | AUTHENTICATION_ALLOW_ANONYMOUS, null, cancellable);
+diff --git a/lib/base/p2p.vala b/lib/base/p2p.vala
+index abe5255d..c6ba6707 100644
+--- a/lib/base/p2p.vala
++++ b/lib/base/p2p.vala
+@@ -889,7 +889,7 @@ namespace Frida {
+ 		string? result_cert_pem = null;
+ 		string? result_key_pem = null;
+ 
+-		new Thread<bool> ("frida-generate-certificate", () => {
++		new Thread<bool> ("gen-cert", () => {
+ 			uint8[] local_cert_der;
+ 			string local_cert_pem;
+ 			string local_key_pem;
+diff --git a/lib/base/value.vala b/lib/base/value.vala
+index 9f02eb9a..01b02e9c 100644
+--- a/lib/base/value.vala
++++ b/lib/base/value.vala
+@@ -426,7 +426,7 @@ namespace Frida {
+ 
+ 	public Json.Reader make_json_reader_taking_node (owned Json.Node root) {
+ 		var reader = new Json.Reader (root);
+-		reader.set_data<Json.Node> ("frida-json-root", (owned) root);
++		reader.set_data<Json.Node> ("fc-json-root", (owned) root);
+ 		return reader;
+ 	}
+ }
+diff --git a/lib/base/xpc.vala b/lib/base/xpc.vala
+index 8e7e4836..e265d753 100644
+--- a/lib/base/xpc.vala
++++ b/lib/base/xpc.vala
+@@ -243,7 +243,7 @@ namespace Frida {
+ 				description = description[:description.length - 1];
+ 
+ 			throw (Error) new GLib.Error.literal (
+-				Quark.from_string ("frida-error-quark"),
++				Quark.from_string ("fc-error-quark"),
+ 				translate_error (domain, code, description),
+ 				description);
+ 		}
+diff --git a/server/server.vala b/server/server.vala
+index 0d72d595..10198823 100644
+--- a/server/server.vala
++++ b/server/server.vala
+@@ -1,7 +1,7 @@
+ namespace Frida.Server {
+ 	private static Application application;
+ 
+-	private const string DEFAULT_DIRECTORY = "re.frida.server";
++	private const string DEFAULT_DIRECTORY = "re.fc.server";
+ 	private static bool output_version = false;
+ 	private static string? device_id = null;
+ 	private static string? listen_address = null;
+@@ -55,7 +55,7 @@ namespace Frida.Server {
+ 		Environment.init ();
+ 
+ #if DARWIN
+-		if (Path.get_basename (args[0]) == "frida-policyd") {
++		if (Path.get_basename (args[0]) == "fc-policyd") {
+ 			return Policyd._main ();
+ 		}
+ #endif
+@@ -178,7 +178,7 @@ namespace Frida.Server {
+ 		Environment.configure ();
+ 
+ #if DARWIN
+-		var worker = new Thread<int> ("frida-server-main-loop", () => {
++		var worker = new Thread<int> ("main-loop", () => {
+ 			var exit_code = run_application (device_id, endpoint_params, options, on_ready);
+ 
+ 			_stop_run_loop ();
+diff --git a/src/agent-container.vala b/src/agent-container.vala
+index 86eb9f4a..ac817367 100644
+--- a/src/agent-container.vala
++++ b/src/agent-container.vala
+@@ -103,7 +103,7 @@ namespace Frida {
+ 		}
+ 
+ 		private void start_worker_thread () {
+-			thread = new Thread<bool> ("frida-agent-container", run);
++			thread = new Thread<bool> ("container", run);
+ 		}
+ 
+ 		private void stop_worker_thread () {
+diff --git a/src/darwin/frida-helper-types.vala b/src/darwin/frida-helper-types.vala
+index 4a8309d5..ccc81f25 100644
+--- a/src/darwin/frida-helper-types.vala
++++ b/src/darwin/frida-helper-types.vala
+@@ -46,7 +46,7 @@ namespace Frida {
+ 		public abstract async MappedLibraryBlob? try_mmap (Bytes blob, Cancellable? cancellable) throws Error, IOError;
+ 	}
+ 
+-	[DBus (name = "re.frida.Helper")]
++	[DBus (name = "re.fc.Helper")]
+ 	public interface DarwinRemoteHelper : Object {
+ 		public signal void output (uint pid, int fd, uint8[] data);
+ 		public signal void spawn_added (HostSpawnInfo info);
+diff --git a/src/linux/frida-helper-types.vala b/src/linux/frida-helper-types.vala
+index fee8ae8d..2cf091a5 100644
+--- a/src/linux/frida-helper-types.vala
++++ b/src/linux/frida-helper-types.vala
+@@ -42,7 +42,7 @@ namespace Frida {
+ 		CONTROL_CHANNEL,
+ 	}
+ 
+-	[DBus (name = "re.frida.Helper")]
++	[DBus (name = "re.fc.Helper")]
+ 	public interface LinuxRemoteHelper : Object {
+ 		public signal void output (uint pid, int fd, uint8[] data);
+ 		public signal void uninjected (uint id);
+diff --git a/src/windows/frida-helper-types.vala b/src/windows/frida-helper-types.vala
+index 0d410202..b354f509 100644
+--- a/src/windows/frida-helper-types.vala
++++ b/src/windows/frida-helper-types.vala
+@@ -8,7 +8,7 @@ namespace Frida {
+ 			string[] dependencies, uint id, Cancellable? cancellable) throws Error, IOError;
+ 	}
+ 
+-	[DBus (name = "re.frida.Helper")]
++	[DBus (name = "re.fc.Helper")]
+ 	public interface WindowsRemoteHelper : Object {
+ 		public signal void uninjected (uint id);
+ 
+-- 
+2.50.1 (Apple Git-155)
+

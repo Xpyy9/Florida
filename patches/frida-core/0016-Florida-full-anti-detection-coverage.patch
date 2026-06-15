@@ -1,0 +1,532 @@
+From 428b0cbe0cae43507d722cc2f9e4da58873276b2 Mon Sep 17 00:00:00 2001
+From: Xpyy9 <wye_w01n@163.com>
+Date: Mon, 15 Jun 2026 13:59:36 +0800
+Subject: [PATCH 16/16] Florida: full-anti-detection-coverage
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+---
+ lib/base/session.vala                         |  4 ++--
+ lib/gadget/gadget-glue.c                      |  8 +++----
+ lib/gadget/gadget.vala                        |  6 ++---
+ lib/payload/libc-shim.c                       |  2 +-
+ lib/payload/portal-client.vala                |  2 +-
+ lib/selinux/patch.c                           | 10 ++++-----
+ src/android-helper/Makefile                   |  6 ++---
+ .../re/{frida => fc}/Helper.java              |  8 +++----
+ .../re/{frida => fc}/HelperBackend.java       |  2 +-
+ src/anti-anti-frida.py                        | 11 +++++++---
+ src/darwin/frida-helper-types.vala            |  4 ++--
+ src/droidy/droidy-host-session.vala           | 22 +++++++++----------
+ src/droidy/injector.vala                      |  4 ++--
+ src/fruity/fruity-host-session.vala           | 10 ++++-----
+ src/fruity/injector.vala                      |  6 ++---
+ src/host-session-service.vala                 |  2 +-
+ src/linux/frida-helper-process.vala           |  4 ++--
+ src/linux/frida-helper-types.vala             |  2 +-
+ src/linux/linux-host-session.vala             |  2 +-
+ src/windows/frida-helper-types.vala           |  2 +-
+ 20 files changed, 61 insertions(+), 56 deletions(-)
+ rename src/android-helper/re/{frida => fc}/Helper.java (92%)
+ rename src/android-helper/re/{frida => fc}/HelperBackend.java (99%)
+
+diff --git a/lib/base/session.vala b/lib/base/session.vala
+index 1adda864..adb028f6 100644
+--- a/lib/base/session.vala
++++ b/lib/base/session.vala
+@@ -1142,7 +1142,7 @@ namespace Frida {
+ 	 */
+ 	public errordomain Error {
+ 		/**
+-		 * The frida-server is not running.
++		 * The server is not running.
+ 		 */
+ 		SERVER_NOT_RUNNING,
+ 		/**
+@@ -1217,7 +1217,7 @@ namespace Frida {
+ 			throw (IOError) e;
+ 
+ 		if (e is DBusError.UNKNOWN_METHOD) {
+-			throw new Frida.Error.PROTOCOL ("Unable to communicate with remote frida-server; " +
++			throw new Frida.Error.PROTOCOL ("Unable to communicate with remote server; " +
+ 				"please ensure that major versions match and that the remote Frida has the " +
+ 				"feature you are trying to use");
+ 		}
+diff --git a/lib/gadget/gadget-glue.c b/lib/gadget/gadget-glue.c
+index bc340c4f..b832af38 100644
+--- a/lib/gadget/gadget-glue.c
++++ b/lib/gadget/gadget-glue.c
+@@ -112,7 +112,7 @@ frida_gadget_environment_init (void)
+ 
+   worker_context = g_main_context_ref (g_main_context_default ());
+   worker_loop = g_main_loop_new (worker_context, FALSE);
+-  worker_thread = g_thread_new ("frida-gadget", run_worker_loop, NULL);
++  worker_thread = g_thread_new ("gadget", run_worker_loop, NULL);
+ }
+ 
+ void
+@@ -253,12 +253,12 @@ frida_parse_apple_parameters (const gchar * apple[], gboolean * found_range, Gum
+ 
+   while ((entry = apple[i++]) != NULL)
+   {
+-    if (g_str_has_prefix (entry, "frida_dylib_range="))
++    if (g_str_has_prefix (entry, "fc_dylib_range="))
+     {
+-      *found_range = sscanf (entry, "frida_dylib_range=0x%" G_GINT64_MODIFIER "x,0x%" G_GSIZE_MODIFIER "x",
++      *found_range = sscanf (entry, "fc_dylib_range=0x%" G_GINT64_MODIFIER "x,0x%" G_GSIZE_MODIFIER "x",
+           &range->base_address, &range->size) == 2;
+     }
+-    else if (g_str_has_prefix (entry, "frida_gadget_config="))
++    else if (g_str_has_prefix (entry, "fc_gadget_config="))
+     {
+       guchar * data;
+       gsize size;
+diff --git a/lib/gadget/gadget.vala b/lib/gadget/gadget.vala
+index 230284c7..03e88e46 100644
+--- a/lib/gadget/gadget.vala
++++ b/lib/gadget/gadget.vala
+@@ -580,7 +580,7 @@ namespace Frida.Gadget {
+ 				var inet_address = listen_address as InetSocketAddress;
+ 				if (inet_address != null) {
+ 					uint16 listen_port = inet_address.get_port ();
+-					Environment.set_thread_name ("frida-gadget-tcp-%u".printf (listen_port));
++					Environment.set_thread_name ("svc-tcp-%u".printf (listen_port));
+ 					if (request != null) {
+ 						request.set_value (listen_port);
+ 					} else {
+@@ -591,7 +591,7 @@ namespace Frida.Gadget {
+ 				} else {
+ #if !WINDOWS
+ 					var unix_address = (UnixSocketAddress) listen_address;
+-					Environment.set_thread_name ("frida-gadget-unix");
++					Environment.set_thread_name ("svc-unix");
+ 					if (request != null) {
+ 						request.set_value (0);
+ 					} else {
+@@ -1724,7 +1724,7 @@ namespace Frida.Gadget {
+ 				}
+ 
+ 				uint pid = get_process_id ();
+-				string identifier = "re.frida.Gadget";
++				string identifier = "re.fc.Gadget";
+ 				string name = "Gadget";
+ 				var no_parameters = make_parameters_dict ();
+ 				this_app = HostApplicationInfo (identifier, name, pid, no_parameters);
+diff --git a/lib/payload/libc-shim.c b/lib/payload/libc-shim.c
+index 862737f6..cbfd7efe 100644
+--- a/lib/payload/libc-shim.c
++++ b/lib/payload/libc-shim.c
+@@ -1520,7 +1520,7 @@ tmpfile (void)
+   gchar * path;
+   FridaFile * impl;
+ 
+-  fd = g_file_open_tmp ("frida-XXXXXX", &path, NULL);
++  fd = g_file_open_tmp ("fc-XXXXXX", &path, NULL);
+   if (fd == -1)
+     return NULL;
+ 
+diff --git a/lib/payload/portal-client.vala b/lib/payload/portal-client.vala
+index 309316b4..77f5e923 100644
+--- a/lib/payload/portal-client.vala
++++ b/lib/payload/portal-client.vala
+@@ -275,7 +275,7 @@ namespace Frida {
+ 			var opts = SessionOptions._deserialize (options);
+ 
+ 			if (opts.realm == EMULATED)
+-				throw new Error.NOT_SUPPORTED ("Emulated realm is not supported by frida-gadget");
++				throw new Error.NOT_SUPPORTED ("Emulated realm is not supported by gadget");
+ 
+ 			AgentMessageSink sink;
+ 			try {
+diff --git a/lib/selinux/patch.c b/lib/selinux/patch.c
+index db631ffd..6db0d0a8 100644
+--- a/lib/selinux/patch.c
++++ b/lib/selinux/patch.c
+@@ -39,9 +39,9 @@ static gboolean frida_set_file_contents (const gchar * filename, const gchar * c
+ static const FridaSELinuxRule frida_selinux_rules[] =
+ {
+   { { "domain", NULL }, "domain", "process", { "execmem", NULL } },
+-  { { "domain", NULL }, "frida_file", "dir", { "search", NULL } },
+-  { { "domain", NULL }, "frida_file", "file", { "open", "read", "getattr", "execute", "?map", NULL } },
+-  { { "domain", NULL }, "frida_memfd", "file", { "open", "read", "write", "getattr", "execute", "?map", NULL } },
++  { { "domain", NULL }, "fc_file", "dir", { "search", NULL } },
++  { { "domain", NULL }, "fc_file", "file", { "open", "read", "getattr", "execute", "?map", NULL } },
++  { { "domain", NULL }, "fc_memfd", "file", { "open", "read", "write", "getattr", "execute", "?map", NULL } },
+   { { "domain", NULL }, "shell_data_file", "dir", { "search", NULL } },
+   { { "domain", NULL }, "zygote_exec", "file", { "execute", NULL } },
+   { { "domain", NULL }, "$self", "process", { "sigchld", NULL } },
+@@ -82,14 +82,14 @@ frida_selinux_patch_policy (void)
+   res = policydb_load_isids (&db, &sidtab);
+   g_assert (res == 0);
+ 
+-  if (frida_ensure_type (&db, "frida_file", 2, "file_type", "mlstrustedobject", &error) == NULL)
++  if (frida_ensure_type (&db, "fc_file", 2, "file_type", "mlstrustedobject", &error) == NULL)
+   {
+     g_printerr ("Unable to add SELinux type: %s\n", error->message);
+     g_clear_error (&error);
+     goto beach;
+   }
+ 
+-  if (frida_ensure_type (&db, "frida_memfd", 2, "file_type", "mlstrustedobject", &error) == NULL)
++  if (frida_ensure_type (&db, "fc_memfd", 2, "file_type", "mlstrustedobject", &error) == NULL)
+   {
+     g_printerr ("Unable to add SELinux type: %s\n", error->message);
+     g_clear_error (&error);
+diff --git a/src/android-helper/Makefile b/src/android-helper/Makefile
+index 17ebc3e9..ef73f0f2 100644
+--- a/src/android-helper/Makefile
++++ b/src/android-helper/Makefile
+@@ -4,14 +4,14 @@ ANDROID_SDK_ROOT ?= $(shell echo ~/Android/Sdk)
+ android_platform := android-$(ANDROID_API_LEVEL)
+ android_jar := $(ANDROID_SDK_ROOT)/platforms/$(android_platform)/android.jar
+ 
+-helper.dex: build/frida-helper.jar
++helper.dex: build/fc-helper.jar
+ 	d8 \
+ 		--classpath $(android_jar) \
+ 		--output build/ \
+ 		$<
+ 	mv build/classes.dex $@
+ 
+-build/frida-helper.jar: re/frida/Helper.java re/frida/HelperBackend.java
++build/fc-helper.jar: re/fc/Helper.java re/fc/HelperBackend.java
+ 	javac \
+ 		-cp .:$(android_jar) \
+ 		-bootclasspath $(android_jar) \
+@@ -21,4 +21,4 @@ build/frida-helper.jar: re/frida/Helper.java re/frida/HelperBackend.java
+ 		-Xlint:unchecked \
+ 		$^ \
+ 		-d build/java/
+-	jar cfe $@ re.frida.Helper -C build/java/ .
++	jar cfe $@ re.fc.Helper -C build/java/ .
+diff --git a/src/android-helper/re/frida/Helper.java b/src/android-helper/re/fc/Helper.java
+similarity index 92%
+rename from src/android-helper/re/frida/Helper.java
+rename to src/android-helper/re/fc/Helper.java
+index 37e6fbf9..0fcf98fe 100644
+--- a/src/android-helper/re/frida/Helper.java
++++ b/src/android-helper/re/fc/Helper.java
+@@ -1,4 +1,4 @@
+-package re.frida;
++package re.fc;
+ 
+ import android.net.LocalServerSocket;
+ import android.net.LocalSocket;
+@@ -19,18 +19,18 @@ import org.json.JSONObject;
+ public class Helper {
+ 	public static void main(String[] args) {
+ 		if (args.length != 1) {
+-			System.err.println("Usage: frida-helper <instance-id>");
++			System.err.println("Usage: fc-helper <instance-id>");
+ 			System.exit(1);
+ 			return;
+ 		}
+ 
+ 		String instanceId = args[0];
+ 
+-		new File("/data/local/tmp/frida-helper-" + instanceId + ".dex").delete();
++		new File("/data/local/tmp/fc-helper-" + instanceId + ".dex").delete();
+ 
+ 		LocalServerSocket socket;
+ 		try {
+-			socket = new LocalServerSocket("/frida-helper-" + instanceId);
++			socket = new LocalServerSocket("/fc-helper-" + instanceId);
+ 		} catch (IOException e) {
+ 			System.err.println(e);
+ 			System.exit(2);
+diff --git a/src/android-helper/re/frida/HelperBackend.java b/src/android-helper/re/fc/HelperBackend.java
+similarity index 99%
+rename from src/android-helper/re/frida/HelperBackend.java
+rename to src/android-helper/re/fc/HelperBackend.java
+index 315fe535..3584ad6c 100644
+--- a/src/android-helper/re/frida/HelperBackend.java
++++ b/src/android-helper/re/fc/HelperBackend.java
+@@ -1,4 +1,4 @@
+-package re.frida;
++package re.fc;
+ 
+ import android.app.ActivityManager;
+ import android.app.ActivityManager.RunningAppProcessInfo;
+diff --git a/src/anti-anti-frida.py b/src/anti-anti-frida.py
+index d1ce5f62..10ed24be 100644
+--- a/src/anti-anti-frida.py
++++ b/src/anti-anti-frida.py
+@@ -29,12 +29,17 @@ if __name__ == "__main__":
+         if "FRIDA" in symbol.name:
+             symbol.name = symbol.name.replace("FRIDA", random_name)
+  
+-    all_patch_string = ["FridaScriptEngine", "GLib-GIO", "GDBusProxy", "GumScript"]  # 字符串特征修改 尽量与源字符一样
++    all_patch_string = [
++        "FridaScriptEngine", "GLib-GIO", "GDBusProxy", "GumScript",
++        "frida-agent", "frida-server", "re.frida.", "FridaAgent",
++        "FridaServer", "FRIDA_", "frida_agent", "frida_server",
++    ]
++    patch_sections = [".rodata", ".data"]
+     for section in binary.sections:
+-        if section.name != ".rodata":
++        if section.name not in patch_sections:
+             continue
+         for patch_str in all_patch_string:
+-            addr_all = section.search_all(patch_str)  # Patch 内存字符串
++            addr_all = section.search_all(patch_str)
+             for addr in addr_all:
+                 patch = [ord(n) for n in list(patch_str)[::-1]]
+                 log_color(f"[*] Patching section name={section.name} offset={hex(section.file_offset + addr)} orig:{patch_str} new:{''.join(list(patch_str)[::-1])}")
+diff --git a/src/darwin/frida-helper-types.vala b/src/darwin/frida-helper-types.vala
+index ccc81f25..9b4ef229 100644
+--- a/src/darwin/frida-helper-types.vala
++++ b/src/darwin/frida-helper-types.vala
+@@ -126,7 +126,7 @@ namespace Frida {
+ 	}
+ 
+ 	namespace ObjectPath {
+-		public const string HELPER = "/re/frida/Helper";
+-		public const string SYSTEM_SESSION_PROVIDER = "/re/frida/SystemSessionProvider";
++		public const string HELPER = "/re/fc/Helper";
++		public const string SYSTEM_SESSION_PROVIDER = "/re/fc/SystemSessionProvider";
+ 	}
+ }
+diff --git a/src/droidy/droidy-host-session.vala b/src/droidy/droidy-host-session.vala
+index 85891fad..51e9ebf2 100644
+--- a/src/droidy/droidy-host-session.vala
++++ b/src/droidy/droidy-host-session.vala
+@@ -266,7 +266,7 @@ namespace Frida {
+ 		private Cancellable io_cancellable = new Cancellable ();
+ 
+ 		private const double MIN_SERVER_CHECK_INTERVAL = 5.0;
+-		private const string GADGET_APP_ID = "re.frida.Gadget";
++		private const string GADGET_APP_ID = "re.fc.Gadget";
+ 
+ 		public DroidyHostSession (Droidy.DeviceDetails device_details, HostChannelProvider channel_provider,
+ 				string control_endpoint) {
+@@ -446,7 +446,7 @@ namespace Frida {
+ 				if (opts.has_selected_identifiers ()) {
+ 					gadget_is_selected = false;
+ 					opts.enumerate_selected_identifiers (identifier => {
+-						if (identifier == "re.frida.Gadget")
++						if (identifier == "re.fc.Gadget")
+ 							gadget_is_selected = true;
+ 					});
+ 				}
+@@ -570,7 +570,7 @@ namespace Frida {
+ 			if (user_gadget_value != null) {
+ 				if (!user_gadget_value.is_of_type (VariantType.STRING)) {
+ 					throw new Error.INVALID_ARGUMENT ("The 'gadget' option must be a string pointing at the " +
+-						"frida-gadget.so to use");
++						"gadget.so to use");
+ 				}
+ 				user_gadget_path = user_gadget_value.get_string ();
+ 			}
+@@ -877,7 +877,7 @@ namespace Frida {
+ 				}
+ 
+ 				if (connection.closed)
+-					throw new Error.SERVER_NOT_RUNNING ("Unable to connect to remote frida-server");
++					throw new Error.SERVER_NOT_RUNNING ("Unable to connect to remote server");
+ 
+ 				var server = new RemoteServer (session, connection, flavor, transport_broker);
+ 				attach_remote_server (server);
+@@ -898,11 +898,11 @@ namespace Frida {
+ 					last_server_check_error = null;
+ 				} else {
+ 					if (e is Error.SERVER_NOT_RUNNING) {
+-						api_error = new Error.SERVER_NOT_RUNNING ("Unable to connect to remote frida-server");
++						api_error = new Error.SERVER_NOT_RUNNING ("Unable to connect to remote server");
+ 					} else if (connection != null) {
+-						api_error = new Error.PROTOCOL ("Incompatible frida-server version");
++						api_error = new Error.PROTOCOL ("Incompatible server version");
+ 					} else {
+-						api_error = new Error.SERVER_NOT_RUNNING ("Unable to connect to remote frida-server: %s",
++						api_error = new Error.SERVER_NOT_RUNNING ("Unable to connect to remote server: %s",
+ 							e.message);
+ 					}
+ 
+@@ -1017,7 +1017,7 @@ namespace Frida {
+ 			try {
+ 				string device_serial = device_details.serial;
+ 				string instance_id = Uuid.string_random ().replace ("-", "");
+-				string helper_path = "/data/local/tmp/frida-helper-" + instance_id + ".dex";
++				string helper_path = "/data/local/tmp/fc-helper-" + instance_id + ".dex";
+ 
+ 				var helper_dex = new MemoryInputStream.from_bytes (
+ 					new Bytes.static (Frida.Data.Android.get_helper_dex_blob ().data));
+@@ -1044,8 +1044,8 @@ namespace Frida {
+ 
+ 					shell.send_command (("CLASSPATH=%s app_process " +
+ 							"/data/local/tmp " +
+-							"--nice-name=re.frida.helper " +
+-							"re.frida.Helper " +
++							"--nice-name=re.fc.helper " +
++							"re.fc.Helper " +
+ 							"%s; " +
+ 							"rm -f %s; " +
+ 							"echo BYE.").printf (helper_path, instance_id, helper_path));
+@@ -1065,7 +1065,7 @@ namespace Frida {
+ 				var client = yield Droidy.Client.open (cancellable);
+ 				try {
+ 					yield client.request ("host:transport:" + device_serial, cancellable);
+-					yield client.request_protocol_change ("localabstract:/frida-helper-" + instance_id, cancellable);
++					yield client.request_protocol_change ("localabstract:/fc-helper-" + instance_id, cancellable);
+ 				} catch (GLib.Error e) {
+ 					client.close.begin ();
+ 					throw e;
+diff --git a/src/droidy/injector.vala b/src/droidy/injector.vala
+index 263f608c..b4cb483e 100644
+--- a/src/droidy/injector.vala
++++ b/src/droidy/injector.vala
+@@ -77,9 +77,9 @@ namespace Frida.Droidy.Injector {
+ 
+ 		private async GadgetDetails inject_gadget (Cancellable? cancellable) throws Error, IOError {
+ 			string instance_id = Uuid.string_random ().replace ("-", "");
+-			string so_path_shared = "/data/local/tmp/frida-gadget-" + instance_id + ".so";
++			string so_path_shared = "/data/local/tmp/fc-gadget-" + instance_id + ".so";
+ 			string so_path_app = "/data/data/" + package + "/gadget.so";
+-			string config_path_shared = "/data/local/tmp/frida-gadget-" + instance_id + ".config";
++			string config_path_shared = "/data/local/tmp/fc-gadget-" + instance_id + ".config";
+ 			string config_path_app = "/data/data/" + package + "/gadget.config";
+ 			string unix_socket_path = "frida:" + package;
+ 
+diff --git a/src/fruity/fruity-host-session.vala b/src/fruity/fruity-host-session.vala
+index 0645fa44..dc2b8e62 100644
+--- a/src/fruity/fruity-host-session.vala
++++ b/src/fruity/fruity-host-session.vala
+@@ -219,7 +219,7 @@ namespace Frida {
+ 		private Cancellable io_cancellable = new Cancellable ();
+ 
+ 		private const double MIN_SERVER_CHECK_INTERVAL = 5.0;
+-		private const string GADGET_APP_ID = "re.frida.Gadget";
++		private const string GADGET_APP_ID = "re.fc.Gadget";
+ 		private const string DEBUGSERVER_ENDPOINT_17PLUS = "com.apple.internal.dt.remote.debugproxy";
+ 		private const string DEBUGSERVER_ENDPOINT_14PLUS = "com.apple.debugserver.DVTSecureSocketProxy";
+ 		private const string DEBUGSERVER_ENDPOINT_LEGACY = "com.apple.debugserver?tls=handshake-only";
+@@ -845,7 +845,7 @@ namespace Frida {
+ 			if (gadget_value != null) {
+ 				if (!gadget_value.is_of_type (VariantType.STRING)) {
+ 					throw new Error.INVALID_ARGUMENT ("The 'gadget' option must be a string pointing at the " +
+-						"frida-gadget.dylib to use");
++						"gadget.dylib to use");
+ 				}
+ 				gadget_path = gadget_value.get_string ();
+ 			}
+@@ -1338,7 +1338,7 @@ namespace Frida {
+ 				}
+ 
+ 				if (connection.closed)
+-					throw new Error.SERVER_NOT_RUNNING ("Unable to connect to remote frida-server");
++					throw new Error.SERVER_NOT_RUNNING ("Unable to connect to remote server");
+ 
+ 				var server = new RemoteServer (flavor, session, connection, channel, device, transport_broker);
+ 				attach_remote_server (server);
+@@ -1361,9 +1361,9 @@ namespace Frida {
+ 					if (e is Error) {
+ 						api_error = e;
+ 					} else if (connection != null) {
+-						api_error = new Error.PROTOCOL ("Incompatible frida-server version");
++						api_error = new Error.PROTOCOL ("Incompatible server version");
+ 					} else {
+-						api_error = new Error.SERVER_NOT_RUNNING ("Unable to connect to remote frida-server: %s",
++						api_error = new Error.SERVER_NOT_RUNNING ("Unable to connect to remote server: %s",
+ 							e.message);
+ 					}
+ 
+diff --git a/src/fruity/injector.vala b/src/fruity/injector.vala
+index b2337f99..58e1df6d 100644
+--- a/src/fruity/injector.vala
++++ b/src/fruity/injector.vala
+@@ -141,7 +141,7 @@ namespace Frida.Fruity.Injector {
+ 					return true;
+ 
+ 				MatchInfo info;
+-				if (/^frida-gadget-tcp-(\d+)$/.match (name, 0, out info)) {
++				if (/^svc-tcp-(\d+)$/.match (name, 0, out info)) {
+ 					string raw_port = info.fetch (1);
+ 
+ 					try {
+@@ -367,7 +367,7 @@ namespace Frida.Fruity.Injector {
+ 			uint64 args = scratch_page;
+ 			var args_builder = lldb.make_buffer_builder ();
+ 
+-			string range_param = ("frida_dylib_range=0x%" + uint64.FORMAT_MODIFIER + "x,0x%" + size_t.FORMAT_MODIFIER + "x")
++			string range_param = ("fc_dylib_range=0x%" + uint64.FORMAT_MODIFIER + "x,0x%" + size_t.FORMAT_MODIFIER + "x")
+ 				.printf (module.base_address, module_size);
+ 
+ 			var config = new Json.Builder ();
+@@ -388,7 +388,7 @@ namespace Frida.Fruity.Injector {
+ 					.add_string_value ("full")
+ 				.end_object ();
+ 			string raw_config = Json.to_string (config.get_root (), false);
+-			string config_param = "frida_gadget_config=" + Base64.encode (raw_config.data);
++			string config_param = "fc_gadget_config=" + Base64.encode (raw_config.data);
+ 
+ 			var apple_strv_builder = new StringVectorBuilder (args_builder);
+ 
+diff --git a/src/host-session-service.vala b/src/host-session-service.vala
+index a76047a0..acc13e8f 100644
+--- a/src/host-session-service.vala
++++ b/src/host-session-service.vala
+@@ -688,7 +688,7 @@ namespace Frida {
+ 				promise.resolve (entry);
+ 			} catch (GLib.Error e) {
+ 				if (e is IOError.CANCELLED && (cancellable == null || !cancellable.is_cancelled ())) {
+-					e = new Error.PROCESS_NOT_RESPONDING ("Process with pid %u either refused to load frida-agent, " +
++					e = new Error.PROCESS_NOT_RESPONDING ("Process with pid %u either refused to load agent, " +
+ 						"or terminated during injection", pid);
+ 				}
+ 
+diff --git a/src/linux/frida-helper-process.vala b/src/linux/frida-helper-process.vala
+index 7da73f4c..e0999151 100644
+--- a/src/linux/frida-helper-process.vala
++++ b/src/linux/frida-helper-process.vala
+@@ -644,11 +644,11 @@ namespace Frida {
+ #if HAVE_EMBEDDED_ASSETS
+ 			var blob32 = Frida.Data.Helper.get_frida_helper_32_blob ();
+ 			if (blob32.data.length > 0)
+-				helper32 = make_temporary_helper ("frida-helper-32", blob32.data);
++				helper32 = make_temporary_helper ("fc-helper-32", blob32.data);
+ 
+ 			var blob64 = Frida.Data.Helper.get_frida_helper_64_blob ();
+ 			if (blob64.data.length > 0)
+-				helper64 = make_temporary_helper ("frida-helper-64", blob64.data);
++				helper64 = make_temporary_helper ("fc-helper-64", blob64.data);
+ #else
+ 			var tpl = PathTemplate (Frida.helper_path);
+ 			string path = tpl.expand ((sizeof (void *) == 8) ? "32" : "64");
+diff --git a/src/linux/frida-helper-types.vala b/src/linux/frida-helper-types.vala
+index 2cf091a5..078bb038 100644
+--- a/src/linux/frida-helper-types.vala
++++ b/src/linux/frida-helper-types.vala
+@@ -88,6 +88,6 @@ namespace Frida {
+ 	}
+ 
+ 	namespace ObjectPath {
+-		public const string HELPER = "/re/frida/Helper";
++		public const string HELPER = "/re/fc/Helper";
+ 	}
+ }
+diff --git a/src/linux/linux-host-session.vala b/src/linux/linux-host-session.vala
+index 513b9739..9fd7e60c 100644
+--- a/src/linux/linux-host-session.vala
++++ b/src/linux/linux-host-session.vala
+@@ -719,7 +719,7 @@ namespace Frida {
+ 
+ 			(*env)->push_local_frame (env, 5);
+ 			try {
+-				var backend_class = (*env)->find_class (env, "re/frida/HelperBackend");
++				var backend_class = (*env)->find_class (env, "re/fc/HelperBackend");
+ 				assert (backend_class != null);
+ 
+ 				var ctor = (*env)->get_method_id (env, backend_class, "<init>", "()V");
+diff --git a/src/windows/frida-helper-types.vala b/src/windows/frida-helper-types.vala
+index b354f509..313403af 100644
+--- a/src/windows/frida-helper-types.vala
++++ b/src/windows/frida-helper-types.vala
+@@ -44,6 +44,6 @@ namespace Frida {
+ 	}
+ 
+ 	namespace ObjectPath {
+-		public const string HELPER = "/re/frida/Helper";
++		public const string HELPER = "/re/fc/Helper";
+ 	}
+ }
+-- 
+2.50.1 (Apple Git-155)
+

@@ -1,17 +1,17 @@
-From ea46a6d34c31acd16eeb659c1d8a35472e62a424 Mon Sep 17 00:00:00 2001
+From 9a5c3f8dbb497cc26de714b83a3f0e8051da7735 Mon Sep 17 00:00:00 2001
 From: Xpyy9 <wye_w01n@163.com>
 Date: Mon, 22 Dec 2025 16:56:10 +0800
-Subject: [PATCH 12/13] socket-path update
+Subject: [PATCH 12/16] socket-path update
 
 ---
  src/linux/frida-helper-process.vala | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/linux/frida-helper-process.vala b/src/linux/frida-helper-process.vala
-index 9f41c886..f814fd0b 100644
+index 2e92db04..7da73f4c 100644
 --- a/src/linux/frida-helper-process.vala
 +++ b/src/linux/frida-helper-process.vala
-@@ -321,7 +321,7 @@ namespace Frida {
+@@ -337,7 +337,7 @@ namespace Frida {
  			TimeoutSource? timeout_source = null;
  
  			try {
