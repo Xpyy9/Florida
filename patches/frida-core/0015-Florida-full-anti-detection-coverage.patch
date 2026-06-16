@@ -11,7 +11,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
  lib/payload/libc-shim.c                       |  2 +-
  lib/payload/portal-client.vala                |  2 +-
  lib/selinux/patch.c                           | 10 ++++-----
- src/android-helper/Makefile                   |  6 ++---
+ src/android-helper/Makefile                   |  7 ++++---
  .../re/{frida => fc}/Helper.java              |  8 +++----
  .../re/{frida => fc}/HelperBackend.java       |  2 +-
  src/anti-anti-frida.py                        | 11 +++++++---
@@ -25,7 +25,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
  src/linux/frida-helper-types.vala             |  2 +-
  src/linux/linux-host-session.vala             |  2 +-
  src/windows/frida-helper-types.vala           |  2 +-
- 20 files changed, 61 insertions(+), 56 deletions(-)
+ 20 files changed, 62 insertions(+), 56 deletions(-)
  rename src/android-helper/re/{frida => fc}/Helper.java (92%)
  rename src/android-helper/re/{frida => fc}/HelperBackend.java (99%)
 
@@ -175,13 +175,14 @@ diff --git a/src/android-helper/Makefile b/src/android-helper/Makefile
 index 17ebc3e9..ef73f0f2 100644
 --- a/src/android-helper/Makefile
 +++ b/src/android-helper/Makefile
-@@ -4,14 +4,14 @@ ANDROID_SDK_ROOT ?= $(shell echo ~/Android/Sdk)
+@@ -4,15 +4,16 @@ ANDROID_SDK_ROOT ?= $(shell echo ~/Android/Sdk)
  android_platform := android-$(ANDROID_API_LEVEL)
  android_jar := $(ANDROID_SDK_ROOT)/platforms/$(android_platform)/android.jar
  
 -helper.dex: build/frida-helper.jar
 +helper.dex: build/fc-helper.jar
  	d8 \
++		--min-api $(ANDROID_API_LEVEL) \
  		--classpath $(android_jar) \
  		--output build/ \
  		$<
@@ -192,7 +193,7 @@ index 17ebc3e9..ef73f0f2 100644
  	javac \
  		-cp .:$(android_jar) \
  		-bootclasspath $(android_jar) \
-@@ -21,4 +21,4 @@ build/frida-helper.jar: re/frida/Helper.java re/frida/HelperBackend.java
+@@ -21,4 +22,4 @@ build/frida-helper.jar: re/frida/Helper.java re/frida/HelperBackend.java
  		-Xlint:unchecked \
  		$^ \
  		-d build/java/
