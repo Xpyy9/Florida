@@ -181,39 +181,6 @@ jobs:
         done
         cd ..
     
-        # Rebuild helper.dex after patches renamed Java package (re.frida -> re.fc)
-        # IMPORTANT: Must use a low API level android.jar (matching upstream default of API 19/21)
-        # to avoid SecurityException on Android 15. The upstream pre-built helper.dex is compiled
-        # with android-19; using a high API level (35/36) causes d8/javac to produce dex bytecode
-        # that behaves differently at runtime (e.g. ActivityThread.systemMain() path changes).
-        echo "Rebuilding helper.dex..."
-        cd frida/subprojects/frida-core/src/android-helper
-        # Add Android SDK build-tools to PATH for d8
-        BUILD_TOOLS_DIR=$(ls -d $ANDROID_HOME/build-tools/*/ | sort -V | tail -n1)
-        export PATH="$BUILD_TOOLS_DIR:$PATH"
-        echo "Using build-tools from: $BUILD_TOOLS_DIR"
-        echo "d8 location: $(which d8)"
-        # Install android-21 platform if not present (upstream uses API 19, but 21 is the minimum
-        # available via sdkmanager and sufficient for ART-based helper)
-        HELPER_API_LEVEL=21
-        if [ ! -f "$ANDROID_HOME/platforms/android-${HELPER_API_LEVEL}/android.jar" ]; then
-          echo "Installing android-${HELPER_API_LEVEL} platform..."
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager "platforms;android-${HELPER_API_LEVEL}" || \
-          yes | $ANDROID_HOME/tools/bin/sdkmanager "platforms;android-${HELPER_API_LEVEL}" || true
-        fi
-        ANDROID_JAR="$ANDROID_HOME/platforms/android-${HELPER_API_LEVEL}/android.jar"
-        if [ ! -f "$ANDROID_JAR" ]; then
-          echo "ERROR: Failed to install android-${HELPER_API_LEVEL} platform, android.jar not found"
-          echo "Available platforms:"
-          ls $ANDROID_HOME/platforms/
-          exit 1
-        fi
-        echo "Using android.jar: $ANDROID_JAR (API level ${HELPER_API_LEVEL})"
-        mkdir -p build/java
-        make android_jar="$ANDROID_JAR"
-        echo "helper.dex rebuilt successfully (size: $(stat -c%s helper.dex 2>/dev/null || stat -f%z helper.dex) bytes)"
-        cd ../../../../..
-      
         ARCHES="android-arm android-arm64 android-x86 android-x86_64"
         for ARCH in $ARCHES
         do
