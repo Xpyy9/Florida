@@ -175,7 +175,7 @@ diff --git a/src/android-helper/Makefile b/src/android-helper/Makefile
 index 17ebc3e9..ef73f0f2 100644
 --- a/src/android-helper/Makefile
 +++ b/src/android-helper/Makefile
-@@ -4,15 +4,16 @@ ANDROID_SDK_ROOT ?= $(shell echo ~/Android/Sdk)
+@@ -4,14 +4,15 @@ ANDROID_SDK_ROOT ?= $(shell echo ~/Android/Sdk)
  android_platform := android-$(ANDROID_API_LEVEL)
  android_jar := $(ANDROID_SDK_ROOT)/platforms/$(android_platform)/android.jar
  
