@@ -1,0 +1,74 @@
+From 10c54cced3905fb261906b54b9217e183fbc8a5d Mon Sep 17 00:00:00 2001
+From: appl3s <appl3_me@qq.com>
+Date: Mon, 22 Dec 2025 17:39:15 +0800
+Subject: [PATCH 14/15] feat: make port dynamic
+
+---
+ lib/base/socket.vala                | 16 ++++++++++++++--
+ src/droidy/droidy-host-session.vala |  2 +-
+ src/fruity/fruity-host-session.vala |  2 +-
+ 3 files changed, 16 insertions(+), 4 deletions(-)
+
+diff --git a/lib/base/socket.vala b/lib/base/socket.vala
+index a8f46005..1f5768c4 100644
+--- a/lib/base/socket.vala
++++ b/lib/base/socket.vala
+@@ -2,8 +2,20 @@ namespace Frida {
+ 	public const uint16 DEFAULT_CONTROL_PORT = 31123;
+ 	public const uint16 DEFAULT_CLUSTER_PORT = 31153;
+ 
++	private uint16 get_current_port() {
++		DateTime now = new DateTime.now_local();
++		string date_str = now.format("%Y-%m-%d");
++		uint hash_value = str_hash(date_str);
++		uint16 port_range = 65535 - 10000;
++		uint16 port = (uint16)((hash_value % port_range) + 10001);
++		if(port == 27042) {
++			port = DEFAULT_CONTROL_PORT;
++		}
++		return port;
++	}
++
+ 	public SocketConnectable parse_control_address (string? address, uint16 port = 0) throws Error {
+-		return parse_socket_address (address, port, "127.0.0.1", DEFAULT_CONTROL_PORT);
++		return parse_socket_address (address, port, "127.0.0.1", get_current_port());
+ 	}
+ 
+ 	public SocketConnectable parse_cluster_address (string? address, uint16 port = 0) throws Error {
+@@ -527,7 +539,7 @@ namespace Frida {
+ 
+ 			uint16 port = endpoint_params.port;
+ 			if (port == 0)
+-				port = (flavor == CONTROL) ? DEFAULT_CONTROL_PORT : DEFAULT_CLUSTER_PORT;
++				port = (flavor == CONTROL) ? get_current_port() : DEFAULT_CLUSTER_PORT;
+ 
+ 			var handler = make_connection_handler (iface);
+ 			try {
+diff --git a/src/droidy/droidy-host-session.vala b/src/droidy/droidy-host-session.vala
+index da0e8b95..98e3e7e8 100644
+--- a/src/droidy/droidy-host-session.vala
++++ b/src/droidy/droidy-host-session.vala
+@@ -129,7 +129,7 @@ namespace Frida {
+ 			if (host_session != null)
+ 				throw new Error.INVALID_ARGUMENT ("Already created");
+ 
+-			string control_endpoint = ("tcp:%" + uint16.FORMAT_MODIFIER + "u").printf (DEFAULT_CONTROL_PORT);
++			string control_endpoint = ("tcp:%" + uint16.FORMAT_MODIFIER + "u").printf (get_current_port());
+ 
+ 			if (options != null) {
+ 				Value? control_endpoint_val = options.map["control-endpoint"];
+diff --git a/src/fruity/fruity-host-session.vala b/src/fruity/fruity-host-session.vala
+index de9db67d..b17af875 100644
+--- a/src/fruity/fruity-host-session.vala
++++ b/src/fruity/fruity-host-session.vala
+@@ -90,7 +90,7 @@ namespace Frida {
+ 			if (host_session != null)
+ 				throw new Error.INVALID_OPERATION ("Already created");
+ 
+-			uint16 control_port = DEFAULT_CONTROL_PORT;
++			uint16 control_port = get_current_port();
+ 
+ 			if (options != null) {
+ 				Value? control_endpoint_val = options.map["control-endpoint"];
+-- 
+2.50.1 (Apple Git-155)

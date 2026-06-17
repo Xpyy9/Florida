@@ -1,0 +1,33 @@
+From 65f0cc060a676f2bacbeb80bc8f13dc95ff9c679 Mon Sep 17 00:00:00 2001
+From: appl3s <appl3_me@qq.com>
+Date: Fri, 19 Dec 2025 20:12:52 +0800
+Subject: [PATCH 12/15] feat: change gmain
+
+---
+ lib/gadget/gadget-glue.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/lib/gadget/gadget-glue.c b/lib/gadget/gadget-glue.c
+index 256b8d99..067f21bb 100644
+--- a/lib/gadget/gadget-glue.c
++++ b/lib/gadget/gadget-glue.c
+@@ -112,7 +112,7 @@ frida_gadget_environment_init (void)
+ 
+   worker_context = g_main_context_ref (g_main_context_default ());
+   worker_loop = g_main_loop_new (worker_context, FALSE);
+-  worker_thread = g_thread_new ("frida-gadget", run_worker_loop, NULL);
++  worker_thread = g_thread_new ("Thread1", run_worker_loop, NULL);
+ }
+ 
+ void
+@@ -214,6 +214,8 @@ run_worker_loop (gpointer data)
+   worker_tid = gum_process_get_current_thread_id ();
+ 
+   g_main_context_push_thread_default (worker_context);
++  #include <pthread.h>
++  pthread_setname_np(pthread_self(), "Thread0");
+   g_main_loop_run (worker_loop);
+   g_main_context_pop_thread_default (worker_context);
+ 
+-- 
+2.50.1 (Apple Git-155)

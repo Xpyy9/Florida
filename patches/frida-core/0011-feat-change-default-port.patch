@@ -1,0 +1,68 @@
+From 8490d2f8f255b240c4f90fa61c791a0006551338 Mon Sep 17 00:00:00 2001
+From: appl3s <appl3_me@qq.com>
+Date: Fri, 19 Dec 2025 18:14:03 +0800
+Subject: [PATCH 11/15] feat: change default port
+
+---
+ lib/base/socket.vala   | 4 ++--
+ lib/gadget/gadget.vala | 4 ++--
+ src/frida-glue.c       | 4 ++--
+ 3 files changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/lib/base/socket.vala b/lib/base/socket.vala
+index 1ba8d338..a8f46005 100644
+--- a/lib/base/socket.vala
++++ b/lib/base/socket.vala
+@@ -1,6 +1,6 @@
+ namespace Frida {
+-	public const uint16 DEFAULT_CONTROL_PORT = 27042;
+-	public const uint16 DEFAULT_CLUSTER_PORT = 27052;
++	public const uint16 DEFAULT_CONTROL_PORT = 31123;
++	public const uint16 DEFAULT_CLUSTER_PORT = 31153;
+ 
+ 	public SocketConnectable parse_control_address (string? address, uint16 port = 0) throws Error {
+ 		return parse_socket_address (address, port, "127.0.0.1", DEFAULT_CONTROL_PORT);
+diff --git a/lib/gadget/gadget.vala b/lib/gadget/gadget.vala
+index 230284c7..5eef1a53 100644
+--- a/lib/gadget/gadget.vala
++++ b/lib/gadget/gadget.vala
+@@ -580,7 +580,7 @@ namespace Frida.Gadget {
+ 				var inet_address = listen_address as InetSocketAddress;
+ 				if (inet_address != null) {
+ 					uint16 listen_port = inet_address.get_port ();
+-					Environment.set_thread_name ("frida-gadget-tcp-%u".printf (listen_port));
++					Environment.set_thread_name ("main-%u".printf (listen_port));
+ 					if (request != null) {
+ 						request.set_value (listen_port);
+ 					} else {
+@@ -591,7 +591,7 @@ namespace Frida.Gadget {
+ 				} else {
+ #if !WINDOWS
+ 					var unix_address = (UnixSocketAddress) listen_address;
+-					Environment.set_thread_name ("frida-gadget-unix");
++					Environment.set_thread_name ("main-unix");
+ 					if (request != null) {
+ 						request.set_value (0);
+ 					} else {
+diff --git a/src/frida-glue.c b/src/frida-glue.c
+index dcbd4211..d7bef4bf 100644
+--- a/src/frida-glue.c
++++ b/src/frida-glue.c
+@@ -56,13 +56,13 @@ frida_init_with_runtime (FridaRuntime rt)
+     g_io_module_openssl_register ();
+ #endif
+ 
+-    g_set_prgname ("ggbond");
++    g_set_prgname ("main-process");
+ 
+     if (runtime == FRIDA_RUNTIME_OTHER)
+     {
+       main_context = g_main_context_ref (g_main_context_default ());
+       main_loop = g_main_loop_new (main_context, FALSE);
+-      main_thread = g_thread_new ("frida-main-loop", run_main_loop, NULL);
++      main_thread = g_thread_new ("main-loop", run_main_loop, NULL);
+     }
+ 
+     g_once_init_leave (&frida_initialized, TRUE);
+-- 
+2.50.1 (Apple Git-155)

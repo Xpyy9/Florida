@@ -1,0 +1,45 @@
+From a82e99db466a0a5ba54b7a11c543203324141bb0 Mon Sep 17 00:00:00 2001
+From: appl3s <appl3_me@qq.com>
+Date: Fri, 19 Dec 2025 21:06:42 +0800
+Subject: [PATCH 13/15] feat: set random string
+
+---
+ lib/gadget/gadget-glue.c | 2 --
+ src/anti-anti-frida.py   | 9 +++++++--
+ 2 files changed, 7 insertions(+), 4 deletions(-)
+
+diff --git a/lib/gadget/gadget-glue.c b/lib/gadget/gadget-glue.c
+index 067f21bb..5ef87666 100644
+--- a/lib/gadget/gadget-glue.c
++++ b/lib/gadget/gadget-glue.c
+@@ -214,8 +214,6 @@ run_worker_loop (gpointer data)
+   worker_tid = gum_process_get_current_thread_id ();
+ 
+   g_main_context_push_thread_default (worker_context);
+-  #include <pthread.h>
+-  pthread_setname_np(pthread_self(), "Thread0");
+   g_main_loop_run (worker_loop);
+   g_main_context_pop_thread_default (worker_context);
+ 
+diff --git a/src/anti-anti-frida.py b/src/anti-anti-frida.py
+index d1ce5f62..41f6acb3 100644
+--- a/src/anti-anti-frida.py
++++ b/src/anti-anti-frida.py
+@@ -36,8 +36,13 @@ if __name__ == "__main__":
+         for patch_str in all_patch_string:
+             addr_all = section.search_all(patch_str)  # Patch 内存字符串
+             for addr in addr_all:
+-                patch = [ord(n) for n in list(patch_str)[::-1]]
+-                log_color(f"[*] Patching section name={section.name} offset={hex(section.file_offset + addr)} orig:{patch_str} new:{''.join(list(patch_str)[::-1])}")
++                # 核心修改：将反转逻辑改为随机打乱字符串
++                # random.sample 会随机打乱字符且保持长度不变，返回列表
++                shuffled_chars = random.sample(patch_str, len(patch_str))
++                shuffled_str = ''.join(shuffled_chars)  # 拼接回字符串
++                patch = [ord(n) for n in shuffled_str]  # 转为 ASCII 码列表
++                
++                log_color(f"[*] Patching section name={section.name} offset={hex(section.file_offset + addr)} orig:{patch_str} new:{shuffled_str}")
+                 binary.patch_address(section.file_offset + addr, patch)
+  
+     binary.write(input_file)
+-- 
+2.50.1 (Apple Git-155)

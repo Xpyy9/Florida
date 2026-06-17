@@ -1,0 +1,26 @@
+From c8c814e22d000da3a01feb0d345593fea9b38f74 Mon Sep 17 00:00:00 2001
+From: appl3s <appl3_me@qq.com>
+Date: Wed, 24 Dec 2025 15:24:15 +0800
+Subject: [PATCH 15/15] feat: change gadget default id and name
+
+---
+ lib/gadget/gadget.vala | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/lib/gadget/gadget.vala b/lib/gadget/gadget.vala
+index 5eef1a53..4eaa3685 100644
+--- a/lib/gadget/gadget.vala
++++ b/lib/gadget/gadget.vala
+@@ -1727,8 +1727,8 @@ namespace Frida.Gadget {
+ 				}
+ 
+ 				uint pid = get_process_id ();
+-				string identifier = "re.frida.Gadget";
+-				string name = "Gadget";
++				string identifier = "com.nil.fdg";
++				string name = "Fdg";
+ 				var no_parameters = make_parameters_dict ();
+ 				this_app = HostApplicationInfo (identifier, name, pid, no_parameters);
+ 				this_process = HostProcessInfo (pid, name, no_parameters);
+-- 
+2.50.1 (Apple Git-155)
